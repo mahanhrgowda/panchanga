@@ -29,44 +29,37 @@ def greg_to_jd(year, month, day, ut_hour, ut_min, ut_sec):
     return jd
 
 def get_sun_long(d):
-    w = 282.9404 + 4.70935e-5 * d
-    e = 0.016709 - 1.151e-9 * d
-    M = mod360(356.0470 + 0.9856002585 * d)
-    E = M + (180 / math.pi) * e * sin_d(M) * (1 + e * cos_d(M))
-    xv = cos_d(E) - e
-    yv = sin_d(E) * math.sqrt(1 - e * e)
-    v = atan2_d(yv, xv)
-    lonsun = mod360(v + w)
-    return lonsun
+    T = d / 36525.0
+    M = mod360(357.52910 + 35999.05030 * T - 0.0001559 * T**2 - 0.00000048 * T**3)
+    L0 = mod360(280.46645 + 36000.76983 * T + 0.0003032 * T**2)
+    DL = (1.914600 - 0.004817 * T - 0.000014 * T**2) * sin_d(M) + \
+         (0.019993 - 0.000101 * T) * sin_d(2 * M) + \
+         0.000290 * sin_d(3 * M)
+    return mod360(L0 + DL)
 
 def get_moon_long(d):
-    N = mod360(125.1228 - 0.0529538083 * d)
-    i = 5.1454
-    w = mod360(318.0634 + 0.1643573223 * d)
-    a = 60.2666
-    e = 0.054900
-    M = mod360(115.3654 + 13.0649929509 * d)
-    E = M + (180 / math.pi) * e * sin_d(M) * (1 + e * cos_d(M))
-    for _ in range(5):
-        E = E - (E - (180 / math.pi) * e * sin_d(E) - M) / (1 - e * cos_d(E))
-    xv = a * (cos_d(E) - e)
-    yv = a * math.sqrt(1 - e * e) * sin_d(E)
-    v = atan2_d(yv, xv)
-    r = math.sqrt(xv**2 + yv**2)
-    l = mod360(v + w)
-    xh = r * (cos_d(N) * cos_d(l) - sin_d(N) * sin_d(l) * cos_d(i))
-    yh = r * (sin_d(N) * cos_d(l) + cos_d(N) * sin_d(l) * cos_d(i))
-    zh = r * sin_d(l) * sin_d(i)
-    lonecl = atan2_d(yh, xh)
-    # Perturbations for better accuracy
-    sun_long = get_sun_long(d)
-    Ls = mod360(sun_long)
-    Lm = mod360(N + w + M)
-    D = mod360(Lm - Ls)
-    F = mod360(Lm - N)
-    long_pert = -1.274 * sin_d(M - 2 * D) + 0.658 * sin_d(2 * D) - 0.186 * sin_d(M) - 0.059 * sin_d(2 * M - 2 * D) - 0.057 * sin_d(M - 2 * D + M) + 0.053 * sin_d(M + 2 * D) + 0.046 * sin_d(2 * D - M) + 0.041 * sin_d(M - M) - 0.035 * sin_d(D) - 0.031 * sin_d(M + M) - 0.015 * sin_d(2 * F - 2 * D) + 0.011 * sin_d(M - 4 * D)
-    moon_long = mod360(Lm + long_pert)
-    return moon_long
+    T = d / 36525.0
+    L0 = mod360(218.31617 + 481267.88088 * T)
+    M = mod360(134.96292 + 477198.86753 * T)
+    Msun = mod360(357.52543 + 35999.04944 * T)
+    F = mod360(93.27283 + 483202.01873 * T)
+    D = mod360(297.85027 + 445267.11135 * T)
+    pert = 0.0
+    pert += 22640 * sin_d(M)
+    pert += 769 * sin_d(2 * M)
+    pert += -4586 * sin_d(M - 2 * D)
+    pert += 2370 * sin_d(2 * D)
+    pert += -668 * sin_d(Msun)
+    pert += -412 * sin_d(2 * F)
+    pert += -125 * sin_d(D)
+    pert += -212 * sin_d(2 * M - 2 * D)
+    pert += -206 * sin_d(M + Msun - 2 * D)
+    pert += 192 * sin_d(M + 2 * D)
+    pert += -165 * sin_d(Msun - 2 * D)
+    pert += 148 * sin_d(L0 - Msun)
+    pert += -110 * sin_d(M + Msun)
+    pert += -55 * sin_d(2 * F - 2 * D)
+    return mod360(L0 + pert / 3600.0)
 
 def get_ayanamsa(d):
     return 23.853 + (d / 365.25) * (50.2388 / 3600)
@@ -163,7 +156,9 @@ if input_date and input_time and selected_tz and lat is not None and long is not
 
     nak_index = math.floor(nirayana_moon / (360 / 27)) + 1
     nak_names = ["Ashwini", "Bharani", "Krittika", "Rohini", "Mrigashirsha", "Ardra", "Punarvasu", "Pushya", "Ashlesha", "Magha", "Purva Phalguni", "Uttara Phalguni", "Hasta", "Chitra", "Swati", "Vishakha", "Anuradha", "Jyeshta", "Mula", "Purva Ashadha", "Uttara Ashadha", "Shravana", "Dhanishta", "Shatabhisha", "Purva Bhadrapada", "Uttara Bhadrapada", "Revati"]
-    nak_str = nak_names[nak_index - 1] + " ⭐"
+    nak_pos = nirayana_moon - (nak_index - 1) * (360 / 27)
+    pada = math.floor(nak_pos / (360 / 108)) + 1
+    nak_str = nak_names[nak_index - 1] + f" Pada {pada}" + " ⭐"
 
     yoga_decimal = (nirayana_sun + nirayana_moon) / (360 / 27)
     yoga_index = math.floor(yoga_decimal) % 27 + 1

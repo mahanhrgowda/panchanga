@@ -1,7 +1,7 @@
 import streamlit as st
 import math
 from datetime import datetime, date, time, timedelta
-from zoneinfo import ZoneInfo
+import zoneinfo
 
 # Helper functions
 def mod360(x):
@@ -120,7 +120,7 @@ if input_date and input_time and selected_tz and lat is not None and long is not
     min_local = input_time.minute
     sec_local = 0
     dt_local = datetime(year, month, day, hour_local, min_local, sec_local)
-    tz_info = ZoneInfo(selected_tz)
+    tz_info = zoneinfo.ZoneInfo(selected_tz)
     dt_tz = dt_local.replace(tzinfo=tz_info)
     utc_offset = dt_tz.utcoffset().total_seconds() / 3600
     ut_hour = hour_local - utc_offset

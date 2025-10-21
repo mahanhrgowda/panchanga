@@ -5,28 +5,19 @@ import zoneinfo
 import pandas as pd
 import io
 
-# -------------------- Styling / Theme --------------------
-PRIMARY_COLOR = "#6A1B9A"  # deep violet
-ACCENT_COLOR = "#FFB74D"   # warm saffron
-CARD_BG = "#FFF8E1"
-
+# Styling
 st.set_page_config(page_title="Magical Panchanga", layout='centered', page_icon='🔮')
+st.markdown("""
+<style>
+body {background: linear-gradient(180deg, #fffaf0 0%, #f3e5f5 100%);}
+.header {font-family: 'Georgia', serif; color: #6A1B9A;}
+.card {background: #FFF8E1; padding: 12px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.08);}
+.field {font-weight:600; color: #6A1B9A;}
+.small {font-size:0.9rem; color:#333333}
+</style>
+""", unsafe_allow_html=True)
 
-# Basic CSS (kept minimal and safe)
-st.markdown(
-    """
-    <style>
-    body {background: linear-gradient(180deg, #fffaf0 0%%, #f3e5f5 100%%);}
-    .header {font-family: 'Georgia', serif; color: %s;}
-    .card {background: %s; padding: 12px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.08);}
-    .field {font-weight:600; color: %s;}
-    .small {font-size:0.9rem; color:#333333}
-    </style>
-    """ % (PRIMARY_COLOR, CARD_BG, PRIMARY_COLOR),
-    unsafe_allow_html=True,
-)
-
-# -------------------- Utilities --------------------
+# Utilities
 def mod360(x):
     return (x % 360 + 360) % 360
 
@@ -36,7 +27,7 @@ def sin_d(x):
 def cos_d(x):
     return math.cos(math.radians(x))
 
-# -------------------- Julian Day helpers --------------------
+# Julian Day
 def greg_to_jd(year, month, day, ut_hour, ut_min, ut_sec):
     if month <= 2:
         year -= 1
@@ -77,7 +68,7 @@ def jd_to_datetime_utc(jd):
     second = int((((day_frac * 24 - hour) * 60) - minute) * 60)
     return datetime(year, month, day_floor, hour, minute, second)
 
-# -------------------- Sun & Moon models --------------------
+# Sun and Moon
 def sun_coords(d):
     T = d / 36525.0
     L0 = mod360(280.46646 + 36000.76983 * T + 0.0003032 * T * T)
@@ -110,7 +101,7 @@ def moon_longitude_high(d):
         lon += (coeff / 1000000.0) * math.sin(math.radians(arg))
     return mod360(lon)
 
-# -------------------- Ayanamsa choices (precise fits) --------------------
+# Ayanamsa
 def ayanamsa_lahiri_precise(jd):
     T = (jd - 2451545.0) / 36525.0
     a0 = 23.8534315
@@ -134,7 +125,7 @@ AYANAMSAS = {
 
 rashi_names = ["Mesha", "Vrishabha", "Mithuna", "Karka", "Simha", "Kanya", "Tula", "Vrishchika", "Dhanu", "Makara", "Kumbha", "Meena"]
 
-# -------------------- Sunrise/Sunset iterative --------------------
+# Sunrise/Sunset
 def sunrise_sunset_iterative(year, month, day, lat, lon, tz_offset_hours):
     approx_noon_utc = 12 - lon / 15.0
     jd_noon = greg_to_jd(year, month, day, approx_noon_utc, 0, 0)
@@ -151,7 +142,7 @@ def sunrise_sunset_iterative(year, month, day, lat, lon, tz_offset_hours):
     sunset_local = (sunset_utc + tz_offset_hours) % 24
     return sunrise_local, sunset_local, lam, decl
 
-# -------------------- Tithi utilities: find exact transition via bisection --------------------
+# Tithi transition
 def long_diff_at_jd(jd, ayan_func):
     d = jd - 2451545.0
     sun_l, _ = sun_coords(d)
@@ -200,7 +191,7 @@ def find_kalashtami_window(start_jd, ayan_func, search_days=60):
             continue
     return None, None
 
-# -------------------- App UI inputs --------------------
+# UI
 st.header("🔮 Magical Panchanga Calculator — Kalashtami & Theme")
 
 input_date = st.date_input("Date 📅", value=date.today())
@@ -212,25 +203,16 @@ lat = st.number_input("Latitude ° North 📍", value=13.32, format="%.6f")
 lon = st.number_input("Longitude ° East 📍", value=75.77, format="%.6f")
 ayan_choice = st.selectbox("Ayanamsa choice", list(AYANAMSAS.keys()), index=0)
 
-# Set defaults if None
-if input_date is None:
-    input_date = date.today()
-if input_time is None:
-    input_time = time(12, 0)
-
 if st.button('Compute Panchanga & Kalashtami'):
-    # Prepare datetime with timezone
     tz_info = zoneinfo.ZoneInfo(selected_tz)
     dt_local = datetime.combine(input_date, input_time).replace(tzinfo=tz_info)
     dt_utc = dt_local.astimezone(timezone.utc)
     
-    # JD from UTC datetime
     y, m, d = dt_utc.year, dt_utc.month, dt_utc.day
     ut_hour, ut_min, ut_sec = dt_utc.hour, dt_utc.minute, dt_utc.second
     jd = greg_to_jd(y, m, d, ut_hour, ut_min, ut_sec)
     d_j = jd - 2451545.0
 
-    # UTC offset for local times (approximate, assuming constant)
     utc_offset = dt_local.utcoffset().total_seconds() / 3600.0 if dt_local.utcoffset() else 0
 
     ayan_func = AYANAMSAS.get(ayan_choice, ayanamsa_lahiri_precise)
@@ -247,29 +229,24 @@ if st.button('Compute Panchanga & Kalashtami'):
     tithi_in_paksha = tithi_index if tithi_index <= 15 else tithi_index - 15
     tithi_progress = long_diff % 12
 
-    # Rashi positions
     sun_rashi_idx = math.floor(nirayana_sun / 30)
     sun_deg = nirayana_sun % 30
     moon_rashi_idx = math.floor(nirayana_moon / 30)
     moon_deg = nirayana_moon % 30
 
-    # Sunrise/sunset
     sunrise_local, sunset_local, sun_lambda, sun_decl = sunrise_sunset_iterative(input_date.year, input_date.month, input_date.day, lat, lon, utc_offset)
 
-    # Nakshatra
     nak_index = math.floor(nirayana_moon / (360 / 27)) + 1
     nak_names = ["Ashwini","Bharani","Krittika","Rohini","Mrigashirsha","Ardra","Punarvasu","Pushya","Ashlesha","Magha","Purva Phalguni","Uttara Phalguni","Hasta","Chitra","Swati","Vishakha","Anuradha","Jyeshta","Mula","Purva Ashadha","Uttara Ashadha","Shravana","Dhanishta","Shatabhisha","Purva Bhadrapada","Uttara Bhadrapada","Revati"]
     nak_name = nak_names[(nak_index-1) % 27]
     nak_pos = nirayana_moon - (nak_index - 1) * (360 / 27)
     pada = math.floor(nak_pos / (360 / 108)) + 1
 
-    # Yoga
     yoga_decimal = (nirayana_sun + nirayana_moon) / (360 / 27)
     yoga_index = (math.floor(yoga_decimal) % 27) + 1
     yoga_names = ["Vishkambha","Priti","Ayushman","Saubhagya","Shobhana","Atiganda","Sukarma","Dhriti","Shula","Ganda","Vriddhi","Dhruva","Vyaghata","Harshana","Vajra","Siddhi","Vyatipata","Variyana","Parigha","Shiva","Siddha","Sadhya","Shubha","Shukla","Brahma","Indra","Vaidhriti"]
     yoga_name = yoga_names[yoga_index - 1]
 
-    # Karana (corrected)
     karana_decimal = long_diff / 6.0
     karana_index = math.floor(karana_decimal) + 1
     if karana_index > 56:
@@ -279,24 +256,21 @@ if st.button('Compute Panchanga & Kalashtami'):
             karana_name = "Chatushpada"
         elif karana_index == 59:
             karana_name = "Naga"
-        else:  # 60
+        else:
             karana_name = "Kimstughna"
     else:
         mod = (karana_index - 1) % 7
         movable = ["Bava","Balava","Kaulava","Taitila","Gara","Vanija","Vishti"]
         karana_name = movable[mod]
 
-    # Samvat (approx Shaka)
     samvat = input_date.year - 78
 
-    # Ayana & Ritu (approx from sun)
     nirayana_sun_deg = nirayana_sun
     ayana_str = "Uttarayana ⬆️" if (nirayana_sun_deg >= 270 or nirayana_sun_deg < 90) else "Dakshinayana ⬇️"
     ritu_index = math.floor(nirayana_sun_deg / 60) % 6
     ritu_names = ["Vasanta 🌸","Grishma ☀️","Varsha 🌧️","Sharad 🍂","Hemanta ❄️","Shishira 🌬️"]
     ritu_str = ritu_names[ritu_index]
 
-    # Find Kalashtami window
     s_jd, e_jd = find_kalashtami_window(jd, ayan_func, search_days=60)
     if s_jd and e_jd:
         s_dt_utc_naive = jd_to_datetime_utc(s_jd)
@@ -310,7 +284,6 @@ if st.button('Compute Panchanga & Kalashtami'):
         s_dt_local = e_dt_local = None
         kalashtami_today = False
 
-    # Muhurta daylight partitions & overlaps
     muhurta_info = []
     muhurtas = []
     if sunrise_local is not None:
@@ -339,16 +312,15 @@ if st.button('Compute Panchanga & Kalashtami'):
     date_str = input_date.isoformat() if input_date else date.today().isoformat()
     st.subheader("✨ Panchanga — {} {} ({})".format(date_str, time_display, tz_display))
 
-    # Basic panchanga block
     col1, col2 = st.columns(2)
     with col1:
         st.write("**Ayanamsa:**", ayan_choice, "— %.6f°" % ayan_deg)
         tithi_label = "{} {}".format(paksha, tithi_in_paksha)
         if tithi_in_paksha == 8 and paksha == "Krishna":
             tithi_label += " (Ashtami)"
-        st.write("**Tithi:**", tithi_label, "(%.2f° / 12°)" % tithi_progress)
-        st.write("**Vaara (weekday):**", dt_local.strftime("%A"))
-        st.write("**Paksha:**", paksha)
+        st.write(f"**Tithi:** {tithi_label} ({tithi_progress:.2f}° / 12°)")
+        st.write(f"**Vaara (weekday):** {dt_local.strftime('%A')}")
+        st.write(f"**Paksha:** {paksha}")
     with col2:
         st.write("**Surya (Sun):**", "{} {:.2f}°".format(rashi_names[sun_rashi_idx], sun_deg))
         st.write("**Chandra (Moon):**", "{} {:.2f}°".format(rashi_names[moon_rashi_idx], moon_deg))
@@ -369,7 +341,6 @@ if st.button('Compute Panchanga & Kalashtami'):
         ss = "%02d:%02d" % (int(sunset_local), int((sunset_local % 1) * 60))
         st.write("**Sunrise / Sunset:** {} / {}".format(sr, ss))
 
-    # Muhurtas in expander
     if sunrise_local is not None:
         with st.expander("🌅 Daylight Muhurtas (15 equal parts)"):
             for stt, enn, idx in muhurtas:
@@ -379,12 +350,11 @@ if st.button('Compute Panchanga & Kalashtami'):
     else:
         st.write("Muhurtas unavailable (sunrise/sunset not computed)")
 
-    # Kalashtami block
     if s_dt_local and e_dt_local:
         st.write("### 🕯️ Kalashtami (Krishna Ashtami) Window")
-        st.write("**Start (local):**", s_dt_local.strftime("%Y-%m-%d %H:%M:%S"))
-        st.write("**End (local):**", e_dt_local.strftime("%Y-%m-%d %H:%M:%S"))
-        st.write("**Occurs on selected date?**", "Yes" if kalashtami_today else "No")
+        st.write(f"**Start (local):** {s_dt_local.strftime('%Y-%m-%d %H:%M:%S')}")
+        st.write(f"**End (local):** {e_dt_local.strftime('%Y-%m-%d %H:%M:%S')}")
+        st.write(f"**Occurs on selected date?** {'Yes' if kalashtami_today else 'No'}")
         if muhurta_info:
             st.write("**Overlapping daylight muhurtas:**")
             for idx, stt, enn, ov in muhurta_info:
@@ -396,7 +366,7 @@ if st.button('Compute Panchanga & Kalashtami'):
     else:
         st.info("Could not locate Kalashtami within 60-day search window.")
 
-    # CSV Export
+    # CSV
     rows = {
         "field": [
             "date","time","timezone","ayanamsa","tithi","moon-sun-diff","sun_rashi","moon_rashi","sunrise","sunset","kalashtami_start_local","kalashtami_end_local"
@@ -410,16 +380,15 @@ if st.button('Compute Panchanga & Kalashtami'):
             "{:.4f}".format(long_diff),
             rashi_names[sun_rashi_idx],
             rashi_names[moon_rashi_idx],
-            (None if sunrise_local is None else sr),
-            (None if sunrise_local is None else ss),
-            (s_dt_local.strftime("%Y-%m-%d %H:%M:%S") if s_dt_local else "Unknown"),
-            (e_dt_local.strftime("%Y-%m-%d %H:%M:%S") if e_dt_local else "Unknown"),
+            sr if sunrise_local is not None else None,
+            ss if sunrise_local is not None else None,
+            s_dt_local.strftime("%Y-%m-%d %H:%M:%S") if s_dt_local else "Unknown",
+            e_dt_local.strftime("%Y-%m-%d %H:%M:%S") if e_dt_local else "Unknown",
         ]
     }
     df = pd.DataFrame(rows)
-    buf = io.StringIO()
-    df.to_csv(buf, index=False)
-    st.download_button("Download Panchanga CSV", data=buf.getvalue().encode("utf-8"), file_name="panchanga_kalashtami.csv", mime="text/csv")
+    csv = df.to_csv(index=False)
+    st.download_button("Download Panchanga CSV", data=csv.encode("utf-8"), file_name="panchanga_kalashtami.csv", mime="text/csv")
 
     st.success("Calculation complete — scroll up for results.")
 else:

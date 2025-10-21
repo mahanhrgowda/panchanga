@@ -305,7 +305,20 @@ if st.button('Compute Panchanga & Kalashtami'):
                     muhurta_info.append((idx, st, en, overlap))
 
     # -------------------- Output (styled cards) --------------------
-    st.markdown(f"<div class='card'><h2 class='header'>✨ Panchanga — {input_date.isoformat()} {input_time.strftime('%H:%M')} ({selected_tz})</h2>", unsafe_allow_html=True)
+    # safer header rendering to avoid AttributeError from non-string values
+    tz_display = str(selected_tz)
+    time_display = input_time.strftime('%H:%M') if hasattr(input_time, 'strftime') else str(input_time)
+    st.markdown(
+        "<div class='card'><h2 class='header'>✨ Panchanga — "
+        + input_date.isoformat()
+        + " "
+        + time_display
+        + " ("
+        + tz_display
+        + ")</h2>",
+        unsafe_allow_html=True
+    )
+
     st.markdown(f"<p class='small'><span class='field'>Ayanamsa:</span> {ayan_choice} — {ayan_deg:.6f}°</p>", unsafe_allow_html=True)
     st.markdown(f"<p class='small'><span class='field'>Tithi:</span> {paksha} Paksha — {tithi_in_paksha} ({'Ashtami' if tithi_in_paksha==8 else ''})</p>", unsafe_allow_html=True)
     st.markdown(f"<p class='small'><span class='field'>Moon–Sun diff:</span> {long_diff:.4f}°</p>", unsafe_allow_html=True)

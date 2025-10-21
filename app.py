@@ -16,7 +16,7 @@ st.set_page_config(page_title="Magical Panchanga", layout='centered', page_icon=
 st.markdown(
     """
     <style>
-    body {background: linear-gradient(180deg, #fffaf0 0%, #f3e5f5 100%);}
+    body {background: linear-gradient(180deg, #fffaf0 0%%, #f3e5f5 100%%);}
     .header {font-family: 'Georgia', serif; color: %s;}
     .card {background: %s; padding: 12px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.08);}
     .field {font-weight:600; color: %s;}

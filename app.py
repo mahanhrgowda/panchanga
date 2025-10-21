@@ -206,13 +206,20 @@ st.header("🔮 Magical Panchanga Calculator — Kalashtami & Theme")
 input_date = st.date_input("Date 📅", value=date(1993,7,12))
 input_time = st.time_input("Time ⏰", value=time(12,26))
 tz_list = sorted(list(zoneinfo.available_timezones()))
-tz_index = tz_list.index('Asia/Calcutta') if 'Asia/Calcutta' in tz_list else 0
+tz_index = tz_list.index('Asia/Calcutta') if 'Asia/Calcutta' in tz_list else tz_list.index('Asia/Kolkata') if 'Asia/Kolkata' in tz_list else 0
 selected_tz = st.selectbox("Time Zone 🌍", options=tz_list, index=tz_index)
 lat = st.number_input("Latitude ° North 📍", value=13.32, format="%.6f")
 lon = st.number_input("Longitude ° East 📍", value=75.77, format="%.6f")
 ayan_choice = st.selectbox("Ayanamsa choice", list(AYANAMSAS.keys()), index=0)
 
 if st.button('Compute Panchanga & Kalashtami'):
+    if input_date is None:
+        st.error("Please select a date.")
+        st.stop()
+    if input_time is None:
+        st.error("Please select a time.")
+        st.stop()
+    
     # Prepare datetime with timezone
     tz_info = zoneinfo.ZoneInfo(selected_tz)
     dt_local = datetime.combine(input_date, input_time).replace(tzinfo=tz_info)
@@ -329,8 +336,9 @@ if st.button('Compute Panchanga & Kalashtami'):
     # -------------------- Output (safe Streamlit primitives) --------------------
     # Header
     tz_display = selected_tz
-    time_display = input_time.strftime('%H:%M')
-    st.subheader(f"✨ Panchanga — {input_date.isoformat()} {time_display} ({tz_display})")
+    time_display = input_time.strftime('%H:%M') if input_time else "No time"
+    date_str = input_date.isoformat()
+    st.subheader(f"✨ Panchanga — {date_str} {time_display} ({tz_display})")
 
     # Basic panchanga block
     col1, col2 = st.columns(2)
@@ -395,7 +403,7 @@ if st.button('Compute Panchanga & Kalashtami'):
             "date","time","timezone","ayanamsa","tithi","moon-sun-diff","sun_rashi","moon_rashi","sunrise","sunset","kalashtami_start_local","kalashtami_end_local"
         ],
         "value": [
-            input_date.isoformat(),
+            date_str,
             time_display,
             tz_display,
             ayan_choice,

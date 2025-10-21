@@ -330,7 +330,7 @@ if st.button('Compute Panchanga & Kalashtami'):
     # Header
     tz_display = selected_tz
     time_display = input_time.strftime('%H:%M')
-    st.subheader("✨ Panchanga — %s %s (%s)" % (input_date.isoformat(), time_display, tz_display))
+    st.subheader(f"✨ Panchanga — {input_date.isoformat()} {time_display} ({tz_display})")
 
     # Basic panchanga block
     col1, col2 = st.columns(2)

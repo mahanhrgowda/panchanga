@@ -337,29 +337,29 @@ if st.button('Compute Panchanga & Kalashtami'):
     tz_display = selected_tz or 'UTC'
     time_display = input_time.strftime('%H:%M') if input_time else '12:00'
     date_str = input_date.isoformat() if input_date else date.today().isoformat()
-    st.subheader("✨ Panchanga — %s %s (%s)" % (date_str, time_display, tz_display))
+    st.subheader("✨ Panchanga — {} {} ({})".format(date_str, time_display, tz_display))
 
     # Basic panchanga block
     col1, col2 = st.columns(2)
     with col1:
         st.write("**Ayanamsa:**", ayan_choice, "— %.6f°" % ayan_deg)
-        tithi_label = "%s %d" % (paksha, tithi_in_paksha)
+        tithi_label = "{} {}".format(paksha, tithi_in_paksha)
         if tithi_in_paksha == 8 and paksha == "Krishna":
             tithi_label += " (Ashtami)"
         st.write("**Tithi:**", tithi_label, "(%.2f° / 12°)" % tithi_progress)
         st.write("**Vaara (weekday):**", dt_local.strftime("%A"))
         st.write("**Paksha:**", paksha)
     with col2:
-        st.write("**Surya (Sun):**", "%s %.2f°" % (rashi_names[sun_rashi_idx], sun_deg))
-        st.write("**Chandra (Moon):**", "%s %.2f°" % (rashi_names[moon_rashi_idx], moon_deg))
+        st.write("**Surya (Sun):**", "{} {:.2f}°".format(rashi_names[sun_rashi_idx], sun_deg))
+        st.write("**Chandra (Moon):**", "{} {:.2f}°".format(rashi_names[moon_rashi_idx], moon_deg))
         st.write("**Rashi (Solar month):**", rashi_names[sun_rashi_idx])
         st.write("**Ayana:**", ayana_str)
         st.write("**Ritu:**", ritu_str)
 
-    st.write("**Nakshatra:**", "%s Pada %d" % (nak_name, pada))
+    st.write("**Nakshatra:**", "{} Pada {}".format(nak_name, pada))
     st.write("**Yoga:**", yoga_name)
     st.write("**Karana:**", karana_name)
-    st.write("**Samvat (approx):**", "Shalivahana Shaka %d" % samvat)
+    st.write("**Samvat (approx):**", "Shalivahana Shaka {}".format(samvat))
 
     # Sunrise / Sunset
     if sunrise_local is None:
@@ -367,7 +367,7 @@ if st.button('Compute Panchanga & Kalashtami'):
     else:
         sr = "%02d:%02d" % (int(sunrise_local), int((sunrise_local % 1) * 60))
         ss = "%02d:%02d" % (int(sunset_local), int((sunset_local % 1) * 60))
-        st.write("**Sunrise / Sunset:** %s / %s" % (sr, ss))
+        st.write("**Sunrise / Sunset:** {} / {}".format(sr, ss))
 
     # Muhurtas in expander
     if sunrise_local is not None:
@@ -375,7 +375,7 @@ if st.button('Compute Panchanga & Kalashtami'):
             for stt, enn, idx in muhurtas:
                 s_str = "%02d:%02d" % (int(stt), int((stt % 1) * 60))
                 e_str = "%02d:%02d" % (int(enn), int((enn % 1) * 60))
-                st.write("- Muhurta %d: %s → %s" % (idx, s_str, e_str))
+                st.write("- Muhurta {}: {} → {}".format(idx, s_str, e_str))
     else:
         st.write("Muhurtas unavailable (sunrise/sunset not computed)")
 
@@ -390,7 +390,7 @@ if st.button('Compute Panchanga & Kalashtami'):
             for idx, stt, enn, ov in muhurta_info:
                 s_str = "%02d:%02d" % (int(stt), int((stt % 1) * 60))
                 e_str = "%02d:%02d" % (int(enn), int((enn % 1) * 60))
-                st.write("- Muhurta %d: %s → %s — overlap %.1f min" % (idx, s_str, e_str, ov * 60.0))
+                st.write("- Muhurta {}: {} → {} — overlap {:.1f} min".format(idx, s_str, e_str, ov * 60.0))
         else:
             st.write("No daylight muhurta overlaps (window may be nocturnal).")
     else:
@@ -406,8 +406,8 @@ if st.button('Compute Panchanga & Kalashtami'):
             time_display,
             tz_display,
             ayan_choice,
-            "%s %s" % (paksha, tithi_in_paksha),
-            "%.4f" % long_diff,
+            "{} {}".format(paksha, tithi_in_paksha),
+            "{:.4f}".format(long_diff),
             rashi_names[sun_rashi_idx],
             rashi_names[moon_rashi_idx],
             (None if sunrise_local is None else sr),

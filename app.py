@@ -203,23 +203,22 @@ def find_kalashtami_window(start_jd, ayan_func, search_days=60):
 # -------------------- App UI inputs --------------------
 st.header("🔮 Magical Panchanga Calculator — Kalashtami & Theme")
 
-input_date = st.date_input("Date 📅", value=date(1993,7,12))
-input_time = st.time_input("Time ⏰", value=time(12,26))
+input_date = st.date_input("Date 📅", value=date.today())
+input_time = st.time_input("Time ⏰", value=time(12, 0))
 tz_list = sorted(list(zoneinfo.available_timezones()))
-tz_index = tz_list.index('Asia/Calcutta') if 'Asia/Calcutta' in tz_list else tz_list.index('Asia/Kolkata') if 'Asia/Kolkata' in tz_list else 0
+tz_index = tz_list.index('Asia/Kolkata')
 selected_tz = st.selectbox("Time Zone 🌍", options=tz_list, index=tz_index)
 lat = st.number_input("Latitude ° North 📍", value=13.32, format="%.6f")
 lon = st.number_input("Longitude ° East 📍", value=75.77, format="%.6f")
 ayan_choice = st.selectbox("Ayanamsa choice", list(AYANAMSAS.keys()), index=0)
 
+# Set defaults if None
+if input_date is None:
+    input_date = date.today()
+if input_time is None:
+    input_time = time(12, 0)
+
 if st.button('Compute Panchanga & Kalashtami'):
-    if input_date is None:
-        st.error("Please select a date.")
-        st.stop()
-    if input_time is None:
-        st.error("Please select a time.")
-        st.stop()
-    
     # Prepare datetime with timezone
     tz_info = zoneinfo.ZoneInfo(selected_tz)
     dt_local = datetime.combine(input_date, input_time).replace(tzinfo=tz_info)
@@ -335,9 +334,9 @@ if st.button('Compute Panchanga & Kalashtami'):
 
     # -------------------- Output (safe Streamlit primitives) --------------------
     # Header
-    tz_display = selected_tz
-    time_display = input_time.strftime('%H:%M') if input_time else "No time"
-    date_str = input_date.isoformat()
+    tz_display = selected_tz or 'UTC'
+    time_display = input_time.strftime('%H:%M') if input_time else '12:00'
+    date_str = input_date.isoformat() if input_date else date.today().isoformat()
     st.subheader("✨ Panchanga — %s %s (%s)" % (date_str, time_display, tz_display))
 
     # Basic panchanga block
